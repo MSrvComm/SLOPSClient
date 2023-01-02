@@ -1,4 +1,4 @@
-module gotest
+module github.com/MSrvComm/SLOPSClient
 
 go 1.19
 
