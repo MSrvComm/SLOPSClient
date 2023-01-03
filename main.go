@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -45,6 +47,8 @@ func main() {
 	flag.IntVar(&iters, "iter", 1_000, "Number of times the test is run")
 	flag.StringVar(&url, "url", "https://httpbin.org/anything/", "URL to test")
 
+	flag.Parse()
+
 	limiter := rate.NewLimiter(rate.Limit(rt), burst)
 	ctx := context.Background()
 
@@ -66,7 +70,23 @@ func main() {
 		}
 		next <- true
 		x := <-ch
-		res, err := http.Get(fmt.Sprintf("%s/%s", url, x))
+
+		var data struct {
+			Key  string `json:"key"`
+			Body string `json:"body"`
+		}
+
+		data.Key = x
+		data.Body = fmt.Sprintf("%s message body", x)
+
+		json_data, err := json.MarshalIndent(data, "", "\t")
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Println("URL:", url)
+		res, err := http.Post(url, "application/json", bytes.NewBuffer(json_data))
 		if err != nil {
 			log.Printf("Error %v calling with %s\n", err, x)
 		} else {
